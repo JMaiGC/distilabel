@@ -93,7 +93,7 @@ class UltraFeedbackTask(Task):
             # find the model is producing scores as 8.5, but that will break
             # the `argilla` integration as it expects an integer for the `RatingQuestion`
             # so we can either do the parsing there or leave it as is.
-            rating = int(float(rating.split(": ")[1]))
+            rating = float(rating.split(": ")[1])
             rationale = rationale.split(": ")[1]
             parsed_output.append(
                 UltraFeedbackOutput(rating=rating, rationale=rationale)

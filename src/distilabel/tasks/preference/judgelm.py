@@ -85,7 +85,7 @@ class JudgeLMTask(Task):
         # find the model is producing scores as 8.5, but that will break
         # the `argilla` integration as it expects an integer for the `RatingQuestion`
         # so we can either do the parsing there or leave it as is.
-        ratings = [int(float(rating)) for rating in split_output[0].split(" ")]
+        ratings = [float(rating) for rating in split_output[0].split(" ")]
         rationale = "\n".join(split_output[1:])
         return JudgeLMOutput(ratings=ratings, rationale=rationale)
 
