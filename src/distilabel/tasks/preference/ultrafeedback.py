@@ -180,6 +180,22 @@ class UltraFeedbackTask(Task):
     ) -> "FeedbackRecord":
         if not _argilla_installed:
             raise ImportError("The argilla library is not installed.")
+
+        def ratings_as_ranking_value(ratings: List[int]) -> List:
+            indexed_ratings = list(enumerate(ratings, start=1))
+            sorted_ratings = sorted(indexed_ratings, key=lambda x: x[1], reverse=True)
+
+            ranked_fields = []
+            current_rank = 1
+            for i, (index, rating) in enumerate(sorted_ratings):
+                if i > 0 and rating < sorted_ratings[i - 1][1]:
+                    current_rank = i + 1
+                ranked_fields.append(
+                    {"rank": current_rank, "value": f"generations-{index}"}
+                )
+
+            return ranked_fields
+
         fields = {}
         for input_arg_name in self.input_args_names:
             if isinstance(dataset_row[input_arg_name], list):
@@ -198,24 +214,6 @@ class UltraFeedbackTask(Task):
             if dataset_row[output_arg_name] is None:
                 continue
             if output_arg_name == "rating" and group_ratings_as_ranking:
-
-                def ratings_as_ranking_value(ratings: List[int]):
-                    indexed_ratings = list(enumerate(ratings, start=1))
-                    sorted_ratings = sorted(
-                        indexed_ratings, key=lambda x: x[1], reverse=True
-                    )
-
-                    ranked_fields = []
-                    current_rank = 1
-                    for i, (index, rating) in enumerate(sorted_ratings):
-                        if i > 0 and rating < sorted_ratings[i - 1][1]:
-                            current_rank = i + 1
-                        ranked_fields.append(
-                            {"rank": current_rank, "value": f"generations-{index}"}
-                        )
-
-                    return ranked_fields
-
                 suggestions.append(
                     {
                         "question_name": "generations-ranking",

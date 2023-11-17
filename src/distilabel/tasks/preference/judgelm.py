@@ -171,6 +171,22 @@ class JudgeLMTask(Task):
     ) -> "FeedbackRecord":
         if not _argilla_installed:
             raise ImportError("The argilla library is not installed.")
+
+        def ratings_as_ranking_value(ratings: List[int]) -> List:
+            indexed_ratings = list(enumerate(ratings, start=1))
+            sorted_ratings = sorted(indexed_ratings, key=lambda x: x[1], reverse=True)
+
+            ranked_fields = []
+            current_rank = 1
+            for i, (index, rating) in enumerate(sorted_ratings):
+                if i > 0 and rating < sorted_ratings[i - 1][1]:
+                    current_rank = i + 1
+                ranked_fields.append(
+                    {"rank": current_rank, "value": f"generations-{index}"}
+                )
+
+            return ranked_fields
+
         fields = {}
         for input_arg_name in self.input_args_names:
             if isinstance(dataset_row[input_arg_name], list):
@@ -195,24 +211,6 @@ class JudgeLMTask(Task):
                 )
             elif output_arg_name == "ratings":
                 if group_ratings_as_ranking:
-
-                    def ratings_as_ranking_value(ratings: List[int]):
-                        indexed_ratings = list(enumerate(ratings, start=1))
-                        sorted_ratings = sorted(
-                            indexed_ratings, key=lambda x: x[1], reverse=True
-                        )
-
-                        ranked_fields = []
-                        current_rank = 1
-                        for i, (index, rating) in enumerate(sorted_ratings):
-                            if i > 0 and rating < sorted_ratings[i - 1][1]:
-                                current_rank = i + 1
-                            ranked_fields.append(
-                                {"rank": current_rank, "value": f"generations-{index}"}
-                            )
-
-                        return ranked_fields
-
                     suggestions.append(
                         {
                             "question_name": "generations-ranking",
@@ -226,7 +224,7 @@ class JudgeLMTask(Task):
                         suggestions.append(
                             {
                                 "question_name": f"generations-{idx}-rating",
-                                "value": value,
+                                "value": int(value),
                             }
                         )
         return rg.FeedbackRecord(fields=fields, suggestions=suggestions)
